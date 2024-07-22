@@ -73,7 +73,7 @@ class Endpoint:
             ret = Record
         return ret
 
-    def all(self, limit=0, offset=None):
+    def all(self, limit=0, offset=None, branch=""):
         """Queries the 'ListView' of a given endpoint.
 
         Returns all objects from an endpoint.
@@ -107,7 +107,11 @@ class Endpoint:
         """
         if limit == 0 and offset is not None:
             raise ValueError("offset requires a positive limit value")
+
+        filters = {"_branch": branch}
+
         req = Request(
+            filters=filters,
             base="{}/".format(self.url),
             token=self.token,
             http_session=self.api.http_session,
@@ -157,6 +161,13 @@ class Endpoint:
         except IndexError:
             key = None
 
+        # swap 'branch' to '_branch'
+        if kwargs.get('branch'):
+            kwargs['_branch'] = kwargs['branch']
+            del kwargs['branch']
+
+        filters = {'_branch': kwargs.get('_branch') or ''}
+
         if not key:
             resp = self.filter(**kwargs)
             ret = next(resp, None)
@@ -174,6 +185,7 @@ class Endpoint:
 
         req = Request(
             key=key,
+            filters=filters,
             base=self.url,
             token=self.token,
             http_session=self.api.http_session,
